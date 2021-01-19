@@ -27,7 +27,7 @@ console.log(`Port is ${port}`);
 
 //Set static folder
 app.use(history());
-app.use(express.static(path.join(__dirname, 'rocket')));
+app.use(express.static(path.join(__dirname, 'naviator')));
 
 app.get('/', (req, res) => {
   res.send('Invalid response');

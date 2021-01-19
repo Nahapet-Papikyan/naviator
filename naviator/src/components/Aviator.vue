@@ -14,41 +14,41 @@
     </div>
     <div class="_bet">
       <div class="_bet_item">
-        <input type="number" v-model="bet0.bet" v-if="!startGame || !bet0.isBet" />
-        <input type="text" disabled="disabled" v-if="startGame || bet0.isBet" v-model="bet0.winCount" />
-
-        
+        <p class="err_msg">{{ msg ? msg : ''}} </p>
+        <input type="number" v-model="bet0.bet" :disabled="startGame || bet0.isBet" />
         <button @click="() => bet_(0)" v-if="!startGame || !bet0.isBet" :disabled="!betStarts  || bet0.isBet">
-          Խազադրույք
+          Դնել
         </button>
-        <button @click="() => getBet(0)" v-if="bet0.isBet || startGame" >
+        <button @click="() => _getBet(0)" v-if="bet0.isBet && startGame" >
           Հանել!
         </button>
       </div>
       <div class="_bet_item">
-        <input type="number" v-model="bet1.bet" v-if="!startGame || !bet1.isBet" />
-        <input type="text" disabled="disabled" v-if="startGame || bet1.isBet" v-model="bet1.winCount" />
-
-        <button @click="() => bet_(1)" v-if="!startGame || !bet1.isBet" :disabled="!startGame || !bet1.isBet">
-          Խազադրույք
+        <p class="err_msg">{{ msg ? msg : ''}} </p>
+        <input type="number" v-model="bet1.bet" :disabled="startGame || bet1.isBet" />
+        <button @click="() => bet_(1)" v-if="!startGame || !bet1.isBet" :disabled="!betStarts  || bet1.isBet">
+          Դնել
         </button>
-        <button @click="() => getBet(1)" v-if="bet1.isBet || bet1.isBet" :disabled="startGame || bet1.isBet">
-           startGame" >
+        <button @click="() => _getBet(1)" v-if="bet1.isBet && startGame" >
           Հանել!
         </button>
       </div>
+
     </div>
   </div>
 </template>
 
 <script>
 import { Bet } from "../js/classes";
-import { mapState } from "vuex";
+import { mapState, mapActions } from "vuex";
 
 export default {
   name: "Aviator",
 
   props: ["startGame", "betStarts", "kfc", "isFly" ],
+
+  inject: ["bet", 'getBet'],
+
 
   watch: {
     betStarts(newVal, _) {
@@ -62,29 +62,37 @@ export default {
     kfc(newVal, _) {
       // watch it
       if(this.bet0.isBet) {
-        this.bet0.winCount = this.bet1.bet * newVal;
+        this.bet0.bet =  Math.round(this.bet0._bet * newVal * 100)/100 ;
       }
       if(this.bet1.isBet) {
-        this.bet1.winCount = this.bet1.bet * newVal;
+        this.bet1.bet =  Math.round(this.bet1._bet * newVal * 100)/100 ;
       }
       _;
     },
+
+    isFly(newV, oldV) {
+      if(newV) {
+        this.lose();
+      }
+      oldV;
+    }
   },
 
-  inject: ["bet"],
 
   data() {
     return {
       bet0: {
         isBet: false,
         bet: '',
-        winCount: ''
+        _bet: '',
       },
       bet1: {
         isBet: false,
         bet: '',
-        winCount: ''
+        _bet: '',
+
       },
+      msg: false
     };
   },
 
@@ -93,17 +101,63 @@ export default {
   },
 
   methods: {
+    ...mapActions(['setGamer']),
+    
+
     bet_(betId) {
+      if(+this[`bet${betId}`].bet > 60000 )  {
+        return this.alertMessage('Մաքսիմալ խաղադրույքի չափը 60000');
+      }
+
+      if(+this[`bet${betId}`].bet < 20 )  {
+        return this.alertMessage('Մինիմալ խաղադրույքի չափը 20');
+      }
+      if(+this[`bet${betId}`].bet > +this.gamer.balance) {
+        return this.alertMessage('Անբավարար միջոցներ');
+      }
+
       if (!this[`bet${betId}`].isBet) {
-        let bet = new Bet(this.gamer.name, this[`bet${betId}`].bet, this.gamer.id);
-        this.bet(bet);
+        let bet = new Bet(this.gamer.name, this[`bet${betId}`].bet, this.gamer.id, betId);
         this[`bet${betId}`].isBet = true;
-        this[`bet${betId}`].winCount = this[`bet${betId}`].bet;
+        this[`bet${betId}`]._bet = +this[`bet${betId}`].bet;
+        this[`bet${betId}`].bet = +this[`bet${betId}`].bet;
+        this.bet(bet);
+
       }
     },
-    // getBet(betId) {
 
-    // }
+    alertMessage(msg) {
+      this.msg = msg;
+      setTimeout(() => {
+        this.msg = false;
+      }, 3000)
+    },
+
+    _getBet(betId) {
+      if(this[`bet${betId}`].isBet && this.kfc) {
+        this.getBet(this.gamer.id + betId, this.kfc, this[`bet${betId}`].bet);
+        this.setGamer({...this.gamer, balance: (Math.round((+this.gamer.balance + +this[`bet${betId}`].bet) * 100) / 100) })
+        this[`bet${betId}`].bet = '';
+        this[`bet${betId}`]._bet = '';
+        this[`bet${betId}`].isBet = false
+      }
+    },
+    lose() {
+      let balance = this.gamer.balance;
+      if(this.bet0.isBet) {
+        balance -= this.bet0._bet;
+      }
+      if(this.bet1.isBet) {
+        balance -= this.bet1._bet;
+      }
+      this.bet0.isBet = false;
+      this.bet0.bet = '';
+      this.bet0._bet = '';
+      this.bet1.isBet = false;
+      this.bet1.bet = '';
+      this.bet1._bet = '';
+      this.setGamer({...this.gamer, balance: (Math.round(balance * 100) / 100)})
+    }
   },
 };
 </script>
@@ -171,7 +225,7 @@ export default {
 ._bet_item {
   width: 50%;
   background-image: url(../assets/bg.png);
-  padding: 1rem;
+  padding: .5rem;
   align-items: center;
   display: flex;
   flex-direction: column;
@@ -179,6 +233,7 @@ export default {
 }
 
 ._bet_item input {
+  width: 90%;
   -webkit-appearance: none;
 }
 
@@ -231,6 +286,13 @@ input[type="number"]::-webkit-outer-spin-button {
   background-position: center;
   font-size: 25px;
   color: rgb(158, 161, 163);
+}
+
+.err_msg {
+  color: crimson;
+  margin: 0;
+  min-height: 40px;
+  font-size: 12px;
 }
 
 @media only screen and (max-width: 400px) {

@@ -19,7 +19,8 @@
           </div>
         </div>
       <div class="bets_content">
-        <div class="bet" v-for="bet of bets" :key="bet.userId + Math.floor(Math.random() * 20)">
+        <div class="bet" v-for="bet of bets" :key="bet.userId + Math.floor(Math.random() * 20)" 
+          :class="{'win': bet.status === 'win'}">
           <div class="bet_overner_name bet_item">
             {{bet.name}}
           </div>
@@ -44,6 +45,13 @@ export default {
   name: 'Bets',
 
   props: ['bets'],
+
+  watch: {
+    bets() {
+      this.$forceUpdate();
+      console.log('update');
+    }
+  }
 
 }
 </script>

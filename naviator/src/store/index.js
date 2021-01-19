@@ -8,7 +8,7 @@ export default new Vuex.Store({
   plugins: [createPersistedState()],
   state: {
     gamer: null,
-    color: 'red'
+    isNotify: true
   },
   mutations: {
     

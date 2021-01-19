@@ -1,13 +1,14 @@
 <template>
   <div class="game">
     <div class="continer">
+      <audio ref="betNotify" src="../assets/soft_notification.mp3" style="display: none" />
       <div class="_aviator_">
 
         <div class="header_">
           <Header :balance="gamer.balance" :isAvtiveChat="activeChat" />
         </div>
         <div class="bets_">
-          <Bets :bets="bets" />
+          <Bets :bets="bets" ref="Bets" />
         </div>
         <div class="aviator_">
           <Aviator :startGame="startGame" :betStart="betStart" :kfc="kfc" :betStarts="activeBet" :isFly="isFly" />
@@ -40,13 +41,14 @@ export default {
       sendMassege: this.sendMassege,
       bet: this.bet,
       closeChat: () => {this.activeChat = false},
-      openChat: () => {this.activeChat = true}
+      openChat: () => {this.activeChat = true},
+      getBet: this.getBet,
 
     }
   },
 
   computed: {
-    ...mapState(['gamer'])
+    ...mapState(['gamer', 'isNotify'])
   },
 
   components: {
@@ -74,11 +76,11 @@ export default {
 
   async created() {
 
-    // const URL = window.location.origin;
+    const URL = window.location.origin;
     // this.socket = io.connect('https://naviator-app.herokuapp.com/', { query: `id=${gamer.id}&name=${gamer.name}&balance=${gamer.balance}&color=${gamer.color}` });
-    // this.socket = io.connect(URL, { query: `id=${gamer.id}&name=${gamer.name}&balance=${gamer.balance}&color=${gamer.color}` });
+    this.socket = io.connect(URL, { query: `id=${this.gamer.id}&name=${this.gamer.name}&balance=${this.gamer.balance}&color=${this.gamer.color}` });
 
-    this.socket = io.connect('http://localhost:3000/', { query: `id=${this.gamer.id}&name=${this.gamer.name}&balance=${this.gamer.balance}&color=${this.gamer.color}` });
+    // this.socket = io.connect('http://localhost:3000/', { query: `id=${this.gamer.id}&name=${this.gamer.name}&balance=${this.gamer.balance}&color=${this.gamer.color}` });
     this.setSocketLisstenets()
   },
 
@@ -107,7 +109,12 @@ export default {
       })
 
       this.socket.on('one-bet', ({bet}) => {
+        console.log(bet);
         _this.bets.push(bet);
+        _this.$refs.Bets.$forceUpdate()
+        if(this.isNotify) {
+          this.$refs.betNotify.play()
+        }
       })
 
       // messages 
@@ -151,12 +158,31 @@ export default {
         console.log('end-one-game');
         _this.kfc = false
         _this.startGame = false;
+        _this.bets = [];
+      })
+
+      this.socket.on('geted-bet', (_bet) => {
+        console.log(_bet);
+        let currentBet = this.bets.find(bet => bet.betId === _bet.betId);
+        console.log(currentBet);
+
+        this.bets[this.bets.indexOf(currentBet)] = _bet;
+        let _bets = this.bets;
+        this.bets = [];
+        this.bets = _bets
+        console.log(this.bets);
+        _this.$refs.Bets.$forceUpdate()
       })
 
     },
 
     bet(betData) {
       this.socket.emit('bet', betData);
+      console.log(betData);
+    },
+
+    getBet(betId, int, winC ) {
+      this.socket.emit('get-bet', {betId, int, winC});
     },
 
     startBetting() {
@@ -291,10 +317,14 @@ export default {
 @media only screen and (max-width: 450px) {
 
   .bets_ {
-    top: 80%
+    top: 89%
   }
   .aviator_ {
-    height: 75%;
+    height: 80%;
+  }
+
+  .kfc {
+    font-size: 25px;
   }
 
 }

@@ -1,19 +1,25 @@
 <template>
-  <div class="chat_content">
+  <div class="chat_content" >
+    <audio ref="notify" src="../assets/newMess.mp3" style="display: none" />
+
     <div class="chat_header">
       <div class="online_users">
         Օնլայն։
         <div class="_s" />
         <span>{{ onlineUsers }}</span>
       </div>
-      <div class="chat_head_text">ՉԱԹ</div>
+      <div class="chat_head_text"> ՉԱԹ </div>
+
+      <div class="notify_icon" @click="changeNotifycations"
+        :class="{'avtiveNotify': isNotify, 'inactiveNotify': !isNotify}"/>
+
       <div class="close_chat" @click="() => closeChat()">
         <b>X</b>
       </div>
     </div>
     <div class="chat_continer">
 
-      <div class="chat_cont">
+      <div class="chat_cont" ref="chatBody">
         <div class="chat_ms_item" v-for="msg of msgs" :key="msgs.indexOf(msg)">
           <div class="name">
             <div class="user_icon" :style="{ 'background-color': msg.color }">
@@ -31,10 +37,7 @@
         <input type="text" v-model="massege" />
         <button
           @click="
-            () => {
-              sendMassege(massege);
-              massege = '';
-            }
+            () => { massege && massege.length ? (sendMassege(massege),  massege = '') : '' }
           "
         >
           Send
@@ -45,7 +48,7 @@
 </template>
 
 <script>
-import { mapState } from "vuex";
+import { mapState, mapActions } from "vuex";
 
 export default {
   name: "chat",
@@ -53,17 +56,38 @@ export default {
   inject: ["sendMassege", 'closeChat'],
 
   computed: {
-    ...mapState(["color"]),
+    ...mapState(['gamer', 'isNotify']),
   },
 
   props: ["msgs", "onlineUsers"],
 
+  
+  watch: {
+    msgs(newVal, __) {
+      // watch it
+     
+      if(newVal.length && this.gamer.name !== newVal[newVal.length - 1].from && this.isNotify) {
+        this.$refs.notify.play()
+      }
+      setTimeout(() => {this.$refs.chatBody.scrollTop =  this.$refs.chatBody.scrollHeight}, 100);
+      __;
+    },
+  },
 
   data() {
     return {
       massege: "",
     };
   },
+
+  methods: {
+    ...mapActions(['set']),
+
+
+    changeNotifycations() {
+      this.set({key: 'isNotify', value: !this.isNotify})
+    }
+  }
 };
 </script>
 
@@ -106,6 +130,30 @@ export default {
   height: 5px;
   margin-left: 4px;
 }
+/* 
+.chat_head_text {
+  display: flex;
+    flex-direction: row;
+    align-items: center;
+} */
+
+.notify_icon{
+  height: 27px;
+  width: 27px;
+  cursor: pointer;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+}
+
+.avtiveNotify {
+  background-image: url(../assets/notifyActive.svg);
+}
+
+.inactiveNotify {
+  background-image: url(../assets/inactiveNotify.svg);
+}
+
 .close_chat {
   cursor: pointer;
 }
@@ -163,4 +211,6 @@ export default {
   width: 20%!important;
   padding: 0;
 }
+
+
 </style>

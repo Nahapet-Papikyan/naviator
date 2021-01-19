@@ -2,12 +2,12 @@ const USERS = [];
 
 const MASSEGES = [];
 
-const BETS = [];
+let BETS = [];
 
-const BET_TIME = 5000; // on miliseconds
+const BET_TIME = 9000; // on miliseconds
 const SHOW_UP_CALFICENT_TIME_POW = 100; // calficent * SHOW_UP_CALFICENT_TIME_POW
 const WAITING_AFTER_BET = 2000; // after bet await 
-const WATTING_FOR_START_GAME = 1000;
+const WATTING_FOR_START_GAME = 100;
 const SHOW_KALFICENT_TIME = 4000;
 const KALFICENTS = [1.1, 1.2, 1.3, 3.5, 1.1, 1.1, 1.85, 5.36, 2.3, 1, 6, 5.36, 8.5, 7, 1.12, 1.9, 1.8, 1.36, 1.87, 1.36];
 // const KALFICENTS = [10, 7, 9, 15, 8, 7, 6];
@@ -45,7 +45,15 @@ function setSocketListneres(socket) {
     gameConfig.io.emit('new-massege', data)
   })
 
-  
+  socket.on('get-bet', ({betId, int, winC}) => {
+    let bet = BETS.find(bet => bet.betId = betId);
+    if(bet) {
+      bet.status = 'win';
+      bet.interest = int,
+      bet.winCount = winC
+    }
+    gameConfig.io.emit('geted-bet', bet);
+  })
 
   socket.on('disconnect', () => {
 
@@ -63,6 +71,7 @@ function setSocketListneres(socket) {
 
   socket.on('bet', (bet) => {
     BETS.push(bet);
+    console.log(bet);
     console.log('bet');
     // USERS.forEach(_user => _user.socket.emit('one-bet', {bet: bet}))
 
@@ -89,7 +98,7 @@ const gameConfig = {
     for(let i = 0; ; ){
       io.emit('online-users', {users: USERS.length})
 
-      BETS.splice(0, BETS.length);
+      BETS = [];
       io.emit('all-bets', {bets: BETS });
 
       io.emit('start-bets');

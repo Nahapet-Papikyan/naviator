@@ -1,8 +1,10 @@
 export class Bet {
-  constructor(name, bet, id) {
+  constructor(name, bet, id, betIndex) {
     this.userId = id;
+    this.betId = id + betIndex;
     this.name = name;
     this.bet = bet;
+    this.status = 'wait'
     this.interest = '-';
     this.winCount = '-';
   }

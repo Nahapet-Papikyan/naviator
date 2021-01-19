@@ -52,7 +52,7 @@ html {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
-  font-family: cursive;
+  font-family: sans-serif;
 }
 #app {
   display: block;
